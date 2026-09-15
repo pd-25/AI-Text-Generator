@@ -4,9 +4,12 @@ import QuickIdeas from "./QuickIdeas";
 
 export default function PromtBar() {
     const [suggestedAction, setSuggestedAction] = useState<string>('')
+    const [query, setQuery] = useState<string>('')
+    const [stemmedResponse, setStemmedResponse] = useState<string | null>('')
     const handleSuggestion = (suggestion: string) => {
-        if(suggestedAction == suggestion){
+        if (suggestedAction == suggestion) {
             setSuggestedAction('')
+            return
         }
         setSuggestedAction(suggestion)
     }
@@ -51,10 +54,72 @@ export default function PromtBar() {
         }
     ]
 
-    const sendPrompt = () => {
-        console.log('s -- ', suggestedAction);
+    // const sendPrompt = async() => {
+    //     console.log('s -- ', suggestedAction);
+    //     console.log('q-- ', query)
+    //     const response = await fetch(`${process.env.BASE_URL} //query?query_text=${encodeURIComponent(suggestedAction + ' '+ query)}` )
+    //     const reader = response.body?.getReader();
+    //     const decoder = new TextDecoder('utf-8');
+    //     let done = false;
 
-    }
+    //     while (!done){
+    //         const {value, done: readerDone} = await reader?.read()
+    //         done = readerDone;
+    //         if (value){
+    //             const checkValue = decoder.decode(value, {stream: true});
+    //             setStemmedResponse((prevText) => prevText+checkValue)
+    //         }
+    //     }
+    // }
+    const sendPrompt = async () => {
+        console.log('s -- ', suggestedAction);
+        console.log('q-- ', query);
+
+        try {
+            const response = await fetch(
+                `${process.env.NEXT_PUBLIC_BASE_API}/query?query_text=${encodeURIComponent(
+                    `${suggestedAction} ${query}`
+                )}`
+            );
+
+            if (!response.ok) {
+                throw new Error(`Request failed: ${response.status}`);
+            }
+
+            if (!response.body) {
+                throw new Error('Response body is empty');
+            }
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder('utf-8');
+
+            let done = false;
+
+            while (!done) {
+                const { value, done: readerDone } = await reader.read();
+
+                done = readerDone;
+
+                if (value) {
+                    const checkValue = decoder.decode(value, {
+                        stream: true,
+                    });
+
+                    setStemmedResponse((prevText) => prevText + checkValue);
+                }
+            }
+
+            // Decode any remaining bytes
+            const remainingText = decoder.decode();
+
+            if (remainingText) {
+                setStemmedResponse((prevText) => prevText + remainingText);
+            }
+        } catch (error) {
+            console.error('Error sending prompt:', error);
+        }
+    };
+
 
     return (
         <>
@@ -63,15 +128,15 @@ export default function PromtBar() {
                 {/* Mode Switcher Tabs */}
                 <div className="flex items-center gap-2 border-b border-zinc-800/80 pb-3">
                     {suggestions.map((suggestion) => {
-                         const isActive = suggestedAction === suggestion.label
+                        const isActive = suggestedAction === suggestion.label
 
                         return (
                             <button
                                 key={suggestion.label}
                                 type="button"
                                 className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-medium transition cursor-pointer ${isActive
-                                        ? 'bg-indigo-600 text-white shadow-sm hover:bg-indigo-500'
-                                        : 'border border-zinc-800 bg-zinc-950/60 text-zinc-400 hover:border-zinc-700 hover:bg-zinc-800/50 hover:text-zinc-200'
+                                    ? 'bg-indigo-600 text-white shadow-sm hover:bg-indigo-500'
+                                    : 'border border-zinc-800 bg-zinc-950/60 text-zinc-400 hover:border-zinc-700 hover:bg-zinc-800/50 hover:text-zinc-200'
                                     }`}
                                 onClick={() => handleSuggestion(suggestion.label)}
                             >
@@ -88,6 +153,7 @@ export default function PromtBar() {
                         rows={4}
                         placeholder="Ask anything, describe your email tone and recipient, or provide your blog topic and keywords..."
                         className="w-full resize-none rounded-xl bg-transparent p-3 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none"
+                        onChange={(e) => setQuery(e.target.value)}
                     />
                 </div>
 
@@ -119,6 +185,9 @@ export default function PromtBar() {
                         </svg>
                     </button>
                 </div>
+            </div>
+            <div>
+                {stemmedResponse}
             </div>
             <QuickIdeas />
         </>

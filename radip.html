@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>90s Nostalgia - Akashvani Morning</title>
+    
+    <!-- Import the HLS.js library from a CDN for streaming -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@1"></script>
+    
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: 'Times New Roman', Times, serif, cursive; /* A retro font feel */
+            overflow: hidden; /* Prevent page scrolling */
+        }
+
+        /* 1. Setting the Generated Background Image */
+        body {
+            background-image: url('/Users/pradiptabhuin/NextJs/text-generation-via-llm/nostalgic.png'); /* The image I generated for you */
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+
+        /* 2. Page Container */
+        .page-overlay {
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.3); /* Subtle dark overlay for contrast */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        /* 3. Retro Radio Player Styling */
+        .radio-player {
+            width: 320px;
+            background: #D2B48C; /* Tan/Wood-like background */
+            padding: 15px;
+            border-radius: 12px;
+            border: 4px solid #8B4513; /* Brown frame */
+            box-shadow: 10px 10px 15px rgba(0,0,0,0.5);
+            text-align: center;
+            position: relative;
+        }
+
+        .radio-header {
+            font-size: 1.5em;
+            color: #4B0082; /* Deep violet */
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .radio-sub-header {
+            font-size: 0.9em;
+            color: #333;
+            margin-bottom: 15px;
+            font-style: italic;
+        }
+
+        /* 4. The Interactive Dial and Frequencies */
+        .dial-container {
+            width: 100%;
+            height: 60px;
+            background: #EEDDCC;
+            border-radius: 8px;
+            border: 2px inset #AA9988;
+            position: relative;
+            margin-bottom: 20px;
+            cursor: pointer; /* Change cursor on the dial area */
+        }
+
+        .frequency-text {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8em;
+            color: #555;
+            padding: 2px 5px;
+        }
+
+        .channel-labels {
+            display: flex;
+            justify-content: space-around;
+            position: absolute;
+            width: 100%;
+            bottom: 5px;
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+
+        .label-bangla { color: #8B0000; } /* Dark Red for Bangla */
+        .label-hindi { color: #006400; } /* Dark Green for Hindi */
+
+        /* The Moving Needle */
+        .needle {
+            position: absolute;
+            top: 5px;
+            height: 50px;
+            width: 3px;
+            background-color: rgb(255, 0, 0); /* Red needle */
+            border-radius: 2px;
+            left: 50%; /* Default center over Bangla */
+            transform: translateX(-50%);
+            transition: left 0.3s ease; /* Dial movement animation */
+            pointer-events: none; /* Make needle non-interactive */
+        }
+
+        .instruction-text {
+            font-size: 1.0em;
+            color: rgb(255, 255, 255);
+            margin-top: 10px;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        }
+
+        /* Hidden standard controls */
+        audio {
+            display: none;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 600px) {
+            .radio-player { width: 90%; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="page-overlay">
+        
+        <div class="radio-player" id="main-player">
+            <div class="radio-header">📻 আকাশবাণী / आकाशवाणी</div>
+            <div class="radio-sub-header">সকাল বেলার বার্তা / सुबह की किरणें</div>
+            
+            <!-- Dial Container (Click to Start / Toggle) -->
+            <div class="dial-container" id="dial-area" onclick="handleDialClick(event)">
+                <div class="frequency-text">
+                    <span>MHz</span><span>100</span><span>102</span><span>104</span><span>106</span><span>108</span>
+                </div>
+                <div class="needle" id="needle"></div>
+                <div class="channel-labels">
+                    <span class="label-bangla">বাংলা</span>
+                    <span class="label-hindi">हिन्दी</span>
+                </div>
+            </div>
+            
+            <!-- Standard Audio Element, Hidden, but required for the logic -->
+            <audio id="audio-player"></audio>
+            
+        </div>
+        
+        <p class="instruction-text" id="start-instruction">👆 MOVE THE DIAL TO START</p>
+    </div>
+
+    <script>
+        const audio = document.getElementById('audio-player');
+        const dialArea = document.getElementById('dial-area');
+        const needle = document.getElementById('needle');
+        const instruction = document.getElementById('start-instruction');
+
+        // Akashvani HLS Streams (.m3u8)
+        //const streamBangla = 'https://air.pc.cdn.bitgravity.com/air/live/pbaudio039/playlist.m3u8'; // Akashvani Kolkata
+        const streamBangla = 'https://airhlspush.pc.cdn.bitgravity.com/httppush/hlspbaudio057/hlspbaudio057_Auto.m3u8'; // Akashvani Kolkata
+        
+        const streamHindi = 'https://air.pc.cdn.bitgravity.com/air/live/pbaudio001/playlist.m3u8'; // Vividh Bharati
+        //const streamBangla = 'https://stream.zeno.fm/f32mbeebtqruv'; 
+//const streamHindi = 'https://stream.zeno.fm/8q28q2x84g8uv';
+
+        let currentChannel = null; // 'bangla' or 'hindi'
+        let hasStarted = false; // Flag to track user interaction
+
+        if (!Hls.isSupported()) {
+            instruction.innerText = "Error: This stream is not supported by your browser.";
+            dialArea.style.pointerEvents = "none";
+        }
+
+        // Initialize with default (Bangla)
+        setupHls(streamBangla, 'bangla');
+        // Initial dial position over Bangla
+        moveNeedleTo('bangla');
+
+        // The single interaction handler to bypass autoplay blocks
+        function handleDialClick(event) {
+            const rect = dialArea.getBoundingClientRect();
+            const clickX = event.clientX - rect.left;
+            const containerWidth = rect.width;
+            
+            let targetChannel;
+            // 50% split: left is Bangla, right is Hindi
+            if (clickX < containerWidth / 2) {
+                targetChannel = 'bangla';
+            } else {
+                targetChannel = 'hindi';
+            }
+
+            // User has clicked, now we can play audio
+            if (!hasStarted) {
+                audio.play();
+                hasStarted = true;
+                instruction.style.visibility = 'hidden';
+            }
+
+            // If switching channels
+            if (targetChannel !== currentChannel) {
+                switchChannel(targetChannel);
+            } else {
+                // If clicking the same channel that is already selected, unpause if needed.
+                if (audio.paused && hasStarted) {
+                    audio.play();
+                }
+            }
+        }
+
+        function switchChannel(newChannel) {
+            currentChannel = newChannel;
+            
+            if (newChannel === 'bangla') {
+                setupHls(streamBangla, 'bangla');
+                moveNeedleTo('bangla');
+            } else {
+                setupHls(streamHindi, 'hindi');
+                moveNeedleTo('hindi');
+            }
+        }
+
+        function setupHls(url, channelLabel) {
+            if (Hls.isSupported()) {
+                const hls = new Hls();
+                hls.loadSource(url);
+                hls.attachMedia(audio);
+                hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                    // Only start playing automatically after the first user interaction
+                    if (hasStarted) {
+                        audio.play();
+                    }
+                });
+            } else if (audio.canPlayType('application/vnd.apple.mpegurl')) {
+                audio.src = url;
+                if (hasStarted) {
+                    audio.play();
+                }
+            }
+        }
+
+        function moveNeedleTo(channel) {
+            // Positions as percentages of the dial width
+            const banglaPosition = '30%'; // Left side
+            const hindiPosition = '70%'; // Right side
+            needle.style.left = (channel === 'bangla') ? banglaPosition : hindiPosition;
+        }
+    </script>
+
+</body>
+</html>
