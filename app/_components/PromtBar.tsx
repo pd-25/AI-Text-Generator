@@ -54,23 +54,7 @@ export default function PromtBar() {
         }
     ]
 
-    // const sendPrompt = async() => {
-    //     console.log('s -- ', suggestedAction);
-    //     console.log('q-- ', query)
-    //     const response = await fetch(`${process.env.BASE_URL} //query?query_text=${encodeURIComponent(suggestedAction + ' '+ query)}` )
-    //     const reader = response.body?.getReader();
-    //     const decoder = new TextDecoder('utf-8');
-    //     let done = false;
 
-    //     while (!done){
-    //         const {value, done: readerDone} = await reader?.read()
-    //         done = readerDone;
-    //         if (value){
-    //             const checkValue = decoder.decode(value, {stream: true});
-    //             setStemmedResponse((prevText) => prevText+checkValue)
-    //         }
-    //     }
-    // }
     const sendPrompt = async () => {
         console.log('s -- ', suggestedAction);
         console.log('q-- ', query);
