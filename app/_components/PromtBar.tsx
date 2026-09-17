@@ -1,31 +1,40 @@
 'use client'
-import { useState } from "react";
+import { useState, KeyboardEvent } from "react";
 import QuickIdeas from "./QuickIdeas";
+import ResponseArea from "./ResponseArea";
+import { useStreamingQuery } from "@/hooks/useStreamingQuery";
+import { useResponseStore } from "@/store/responseStore";
 
 export default function PromtBar() {
     const [suggestedAction, setSuggestedAction] = useState<string>('')
     const [query, setQuery] = useState<string>('')
-    const [stemmedResponse, setStemmedResponse] = useState<string | null>('')
+
+    const { send, cancel } = useStreamingQuery()
+    const isStreaming = useResponseStore((s) => s.isStreaming)
+
     const handleSuggestion = (suggestion: string) => {
-        if (suggestedAction == suggestion) {
-            setSuggestedAction('')
-            return
-        }
-        setSuggestedAction(suggestion)
+        setSuggestedAction((prev) => (prev === suggestion ? '' : suggestion))
     }
 
+    const canSend = query.trim().length > 0 && !isStreaming
+
+    const handleSend = () => {
+        if (!canSend) return
+        send(`${suggestedAction} ${query}`.trim())
+    }
+
+    const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+            e.preventDefault()
+            handleSend()
+        }
+    }
 
     const suggestions = [
         {
             label: 'Compose Mail',
             icon: (
-                <svg
-                    className="h-4 w-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={2}
-                    stroke="currentColor"
-                >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                     <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -37,13 +46,7 @@ export default function PromtBar() {
         {
             label: 'Generate Blog',
             icon: (
-                <svg
-                    className="h-4 w-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={2}
-                    stroke="currentColor"
-                >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                     <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -53,57 +56,6 @@ export default function PromtBar() {
             )
         }
     ]
-
-
-    const sendPrompt = async () => {
-        console.log('s -- ', suggestedAction);
-        console.log('q-- ', query);
-
-        try {
-            const response = await fetch(
-                `${process.env.NEXT_PUBLIC_BASE_API}/query?query_text=${encodeURIComponent(
-                    `${suggestedAction} ${query}`
-                )}`
-            );
-
-            if (!response.ok) {
-                throw new Error(`Request failed: ${response.status}`);
-            }
-
-            if (!response.body) {
-                throw new Error('Response body is empty');
-            }
-
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder('utf-8');
-
-            let done = false;
-
-            while (!done) {
-                const { value, done: readerDone } = await reader.read();
-
-                done = readerDone;
-
-                if (value) {
-                    const checkValue = decoder.decode(value, {
-                        stream: true,
-                    });
-
-                    setStemmedResponse((prevText) => prevText + checkValue);
-                }
-            }
-
-            // Decode any remaining bytes
-            const remainingText = decoder.decode();
-
-            if (remainingText) {
-                setStemmedResponse((prevText) => prevText + remainingText);
-            }
-        } catch (error) {
-            console.error('Error sending prompt:', error);
-        }
-    };
-
 
     return (
         <>
@@ -118,7 +70,9 @@ export default function PromtBar() {
                             <button
                                 key={suggestion.label}
                                 type="button"
-                                className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-medium transition cursor-pointer ${isActive
+                                aria-pressed={isActive}
+                                disabled={isStreaming}
+                                className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-medium transition cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${isActive
                                     ? 'bg-indigo-600 text-white shadow-sm hover:bg-indigo-500'
                                     : 'border border-zinc-800 bg-zinc-950/60 text-zinc-400 hover:border-zinc-700 hover:bg-zinc-800/50 hover:text-zinc-200'
                                     }`}
@@ -135,44 +89,57 @@ export default function PromtBar() {
                 <div className="relative mt-2">
                     <textarea
                         rows={4}
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        onKeyDown={handleKeyDown}
                         placeholder="Ask anything, describe your email tone and recipient, or provide your blog topic and keywords..."
                         className="w-full resize-none rounded-xl bg-transparent p-3 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none"
-                        onChange={(e) => setQuery(e.target.value)}
                     />
                 </div>
 
                 {/* Action Toolbar */}
                 <div className="flex items-center justify-between pt-2 border-t border-zinc-800/60 px-1">
-                    <div className="flex items-center gap-2">
-                        <span className="text-xs text-zinc-500">Press send to generate</span>
-                    </div>
+                    <span className="text-xs text-zinc-500">
+                        {isStreaming ? 'Generating response…' : 'Press ⌘ + Enter to send'}
+                    </span>
 
-                    {/* Send Button with Icon */}
-                    <button
-                        type="button"
-                        className="group inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-2.5 text-xs font-semibold text-white shadow-lg shadow-indigo-600/30 transition-all duration-200 hover:from-indigo-500 hover:to-purple-500 hover:shadow-indigo-600/40 active:scale-[0.98] cursor-pointer"
-                        onClick={sendPrompt}
-                    >
-                        <span>Send Prompt</span>
-                        <svg
-                            className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth={2}
-                            stroke="currentColor"
+                    <div className="flex items-center gap-2">
+                        {isStreaming && (
+                            <button
+                                type="button"
+                                onClick={cancel}
+                                className="rounded-xl border border-zinc-800 bg-zinc-950/60 px-3 py-2.5 text-xs font-medium text-zinc-400 transition hover:border-zinc-700 hover:text-zinc-200 cursor-pointer"
+                            >
+                                Stop
+                            </button>
+                        )}
+
+                        <button
+                            type="button"
+                            disabled={!canSend}
+                            onClick={handleSend}
+                            className="group inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-2.5 text-xs font-semibold text-white shadow-lg shadow-indigo-600/30 transition-all duration-200 hover:from-indigo-500 hover:to-purple-500 hover:shadow-indigo-600/40 active:scale-[0.98] cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
                         >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"
-                            />
-                        </svg>
-                    </button>
+                            <span>{isStreaming ? 'Generating…' : 'Send Prompt'}</span>
+                            <svg
+                                className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                strokeWidth={2}
+                                stroke="currentColor"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"
+                                />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
             </div>
-            <div>
-                {stemmedResponse}
-            </div>
+
+            <ResponseArea />
             <QuickIdeas />
         </>
     )
