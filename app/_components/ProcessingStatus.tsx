@@ -1,6 +1,8 @@
 'use client'
 import { processingWords } from "@/config/constant";
+import { useResponseStore } from "@/store/responseStore";
 import { useEffect, useState } from "react";
+import TimeTaken from "./TimeTaken";
 
 const pickWord = (current: string): string => {
     let next = current;
@@ -15,6 +17,7 @@ const pickWord = (current: string): string => {
 
 export default function ProcessingStatus() {
     const [word, setWord] = useState(processingWords[0]);
+    // const { timeTaken } = useResponseStore()
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -23,6 +26,8 @@ export default function ProcessingStatus() {
 
         return () => clearInterval(interval);
     }, []);
+
+
 
     return (
         <div className="flex flex-col gap-3" role="status" aria-live="polite">
@@ -51,6 +56,11 @@ export default function ProcessingStatus() {
                             style={{ animationDelay: `${i * 0.16}s` }}
                         />
                     ))}
+                </span>
+
+                {/* Outside the keyed span, so a word change cannot remount it */}
+                <span className="ml-auto text-xs text-zinc-400">
+                    <TimeTaken />
                 </span>
             </div>
 
