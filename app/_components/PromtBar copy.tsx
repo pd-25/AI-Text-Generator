@@ -175,7 +175,7 @@ export default function PromtBar() {
                 <ResponseArea />
                 {stemmedResponse}
             </div>
-            <QuickIdeas />
+            <QuickIdeas onSelect={setQuery} />
         </>
     )
 }

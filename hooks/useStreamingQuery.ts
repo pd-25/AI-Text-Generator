@@ -24,12 +24,14 @@ export function useStreamingQuery() {
 
             if (!res.ok) throw new Error(`Request failed: ${res.status}`)
             if (!res.body) throw new Error('Response body is empty')
-            setIsProcessing(false);
+            
             const reader = res.body.getReader()
             const decoder = new TextDecoder('utf-8')
 
             while (true) {
+                
                 const { value, done } = await reader.read()
+                if(value) setIsProcessing(false);
                 if (done) break
                 append(decoder.decode(value, { stream: true }))
             }

@@ -9,14 +9,14 @@ const components: Components = {
             href={href}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-indigo-400 underline decoration-indigo-400/40 underline-offset-2 hover:decoration-indigo-400"
+            className="text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900"
         >
             {children}
         </a>
     ),
     // Fenced blocks scroll instead of stretching the layout
     pre: ({ children }) => (
-        <pre className="overflow-x-auto rounded-lg border border-zinc-800 bg-zinc-950 p-3 text-xs">
+        <pre className="overflow-x-auto rounded-lg border border-zinc-200 bg-white p-3 text-xs">
             {children}
         </pre>
     ),
@@ -31,7 +31,7 @@ const components: Components = {
         }
         return (
             <code
-                className="rounded bg-zinc-800 px-1 py-0.5 text-[0.85em] font-medium text-indigo-200 before:content-none after:content-none"
+                className="rounded bg-zinc-200/70 px-1 py-0.5 text-[0.85em] font-medium text-zinc-800 before:content-none after:content-none"
                 {...props}
             >
                 {children}
@@ -56,16 +56,16 @@ export default function Markdown({
     return (
         <div
             className={[
-                'prose prose-sm prose-invert max-w-none',
-                'prose-headings:font-semibold prose-headings:text-zinc-100',
-                'prose-p:leading-relaxed prose-p:text-zinc-100',
-                'prose-strong:text-white',
-                'prose-li:marker:text-zinc-500',
-                'prose-hr:border-zinc-800',
-                'prose-blockquote:border-l-indigo-500/60 prose-blockquote:text-zinc-300',
+                'prose prose-sm max-w-none',
+                'prose-headings:font-semibold prose-headings:text-zinc-900',
+                'prose-p:leading-relaxed prose-p:text-zinc-700',
+                'prose-strong:text-zinc-900',
+                'prose-li:text-zinc-700 prose-li:marker:text-zinc-400',
+                'prose-hr:border-zinc-200',
+                'prose-blockquote:border-l-zinc-300 prose-blockquote:text-zinc-500',
                 // Blinking caret trailing the last block while tokens stream in
                 isStreaming
-                    ? "[&>*:last-child]:after:ml-0.5 [&>*:last-child]:after:animate-pulse [&>*:last-child]:after:text-indigo-400 [&>*:last-child]:after:content-['▍']"
+                    ? "[&>*:last-child]:after:ml-0.5 [&>*:last-child]:after:animate-pulse [&>*:last-child]:after:text-zinc-400 [&>*:last-child]:after:content-['▍']"
                     : '',
             ].join(' ')}
         >

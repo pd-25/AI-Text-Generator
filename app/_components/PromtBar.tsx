@@ -12,7 +12,7 @@ export default function PromtBar() {
 
     const { send, cancel } = useStreamingQuery()
     const isStreaming = useResponseStore((s) => s.isStreaming)
- 
+    const text = useResponseStore((s) => s.text)
 
     const handleSuggestion = (suggestion: string) => {
         setSuggestedAction((prev) => (prev === suggestion ? '' : suggestion))
@@ -32,60 +32,52 @@ export default function PromtBar() {
         }
     }
 
-  
-
     return (
         <>
             {/* Prompt Workspace Container */}
-            <div className="w-full rounded-2xl border border-zinc-800 bg-zinc-900/80 p-3 shadow-2xl backdrop-blur-xl transition-all hover:border-zinc-700/80 focus-within:border-indigo-500/50 focus-within:ring-4 focus-within:ring-indigo-500/10">
-                {/* Mode Switcher Tabs */}
-                <div className="flex items-center gap-2 border-b border-zinc-800/80 pb-3">
-                    {suggestions.map((suggestion) => {
-                        const isActive = suggestedAction === suggestion.label
-
-                        return (
-                            <button
-                                key={suggestion.label}
-                                type="button"
-                                aria-pressed={isActive}
-                                disabled={isStreaming}
-                                className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-medium transition cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${isActive
-                                    ? 'bg-indigo-600 text-white shadow-sm hover:bg-indigo-500'
-                                    : 'border border-zinc-800 bg-zinc-950/60 text-zinc-400 hover:border-zinc-700 hover:bg-zinc-800/50 hover:text-zinc-200'
-                                    }`}
-                                onClick={() => handleSuggestion(suggestion.label)}
-                            >
-                                {suggestion.icon}
-                                <span>{suggestion.label}</span>
-                            </button>
-                        )
-                    })}
-                </div>
-
+            <div className="rounded-2xl border border-zinc-200 bg-white transition focus-within:border-zinc-400">
                 {/* Prompt Text Input Box */}
-                <div className="relative mt-2">
-                    <textarea
-                        rows={4}
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        placeholder="Ask anything, describe your email tone and recipient, or provide your blog topic and keywords..."
-                        className="w-full resize-none rounded-xl bg-transparent p-3 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none"
-                    />
-                </div>
+                <textarea
+                    rows={4}
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Describe what you want to write…"
+                    className="w-full resize-none bg-transparent p-4 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none"
+                />
 
                 {/* Action Toolbar */}
-                <div className="flex items-center justify-between pt-2 border-t border-zinc-800/60 px-1">
-                    <span className="text-xs text-zinc-500">
-                        {isStreaming ? 'Generating response…' : 'Press ⌘ + Enter to send'}
-                    </span>
+                <div className="flex items-center justify-between gap-3 border-t border-zinc-100 p-2.5">
+                    {/* Mode Switcher */}
+                    <div className="flex items-center gap-1.5">
+                        {suggestions.map((suggestion) => {
+                            const isActive = suggestedAction === suggestion.label
+
+                            return (
+                                <button
+                                    key={suggestion.label}
+                                    type="button"
+                                    aria-pressed={isActive}
+                                    disabled={isStreaming}
+                                    className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 ${isActive
+                                        ? 'bg-zinc-900 text-white'
+                                        : 'text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900'
+                                        }`}
+                                    onClick={() => handleSuggestion(suggestion.label)}
+                                >
+                                    {suggestion.icon}
+                                    <span>{suggestion.label}</span>
+                                </button>
+                            )
+                        })}
+                    </div>
 
                     <div className="flex items-center gap-2">
                         {isStreaming && (
                             <button
                                 type="button"
                                 onClick={cancel}
-                                className="rounded-xl border border-zinc-800 bg-zinc-950/60 px-3 py-2.5 text-xs font-medium text-zinc-400 transition hover:border-zinc-700 hover:text-zinc-200 cursor-pointer"
+                                className="rounded-lg px-3 py-1.5 text-xs font-medium text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-900 cursor-pointer"
                             >
                                 Stop
                             </button>
@@ -95,11 +87,11 @@ export default function PromtBar() {
                             type="button"
                             disabled={!canSend}
                             onClick={handleSend}
-                            className="group inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-2.5 text-xs font-semibold text-white shadow-lg shadow-indigo-600/30 transition-all duration-200 hover:from-indigo-500 hover:to-purple-500 hover:shadow-indigo-600/40 active:scale-[0.98] cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
+                            aria-label="Send prompt"
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-900 text-white transition hover:bg-zinc-700 cursor-pointer disabled:cursor-not-allowed disabled:bg-zinc-200 disabled:text-zinc-400"
                         >
-                            <span>{isStreaming ? 'Generating…' : 'Send Prompt'}</span>
                             <svg
-                                className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                                className="h-4 w-4"
                                 fill="none"
                                 viewBox="0 0 24 24"
                                 strokeWidth={2}
@@ -108,7 +100,7 @@ export default function PromtBar() {
                                 <path
                                     strokeLinecap="round"
                                     strokeLinejoin="round"
-                                    d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"
+                                    d="M12 19V5m0 0l-6 6m6-6l6 6"
                                 />
                             </svg>
                         </button>
@@ -116,8 +108,9 @@ export default function PromtBar() {
                 </div>
             </div>
 
+            {!text && !isStreaming && <QuickIdeas onSelect={setQuery} />}
+
             <ResponseArea />
-            <QuickIdeas />
         </>
     )
 }
