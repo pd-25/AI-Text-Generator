@@ -1,3 +1,9 @@
+export default function SockerPage() {
+  return (
+    <div>SockerPage</div>
+  )
+}
+
 // 'use client'
 // import { useEffect, useState } from "react";
 

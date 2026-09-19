@@ -1,8 +1,9 @@
+import InfoNotes from "./_components/InfoNotes";
 import PromtBar from "./_components/PromtBar";
 
 export default function Home() {
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-6 py-16">
+    <div className="relative mx-auto flex w-full max-w-3xl flex-1 flex-col px-6 py-16">
       <div className="mb-8">
         <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">
           What can I write for you?
@@ -13,6 +14,8 @@ export default function Home() {
       </div>
 
       <PromtBar />
+
+      <InfoNotes />
     </div>
   );
 }

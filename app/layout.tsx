@@ -13,8 +13,11 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// Server-only env var, so it stays out of the client bundle
+const brandName = process.env.BRAND_NAME?.trim() || "Text Generation";
+
 export const metadata: Metadata = {
-  title: "Text Generation by Pradipt",
+  title: `${brandName} by Pradipta`,
   description: "Generate blog articles, compose mails. ",
 };
 
@@ -31,11 +34,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               <div className="flex items-center gap-2.5">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-900">
                   <span className="font-mono text-xs font-semibold text-white">
-                    iP
+                    PL
                   </span>
                 </div>
                 <span className="text-sm font-medium text-zinc-900">
-                  Text Generation
+                  {brandName}
                 </span>
               </div>
 

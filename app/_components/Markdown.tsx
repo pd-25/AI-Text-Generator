@@ -1,6 +1,18 @@
 'use client'
+import { Children, isValidElement, type ReactNode } from 'react'
 import ReactMarkdown, { type Components } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import CodeBlock from './CodeBlock'
+
+// Fenced blocks arrive as nested React nodes; flatten them back to raw source
+function toText(node: ReactNode): string {
+    if (node == null || typeof node === 'boolean') return ''
+    if (typeof node === 'string' || typeof node === 'number') return String(node)
+    if (Array.isArray(node)) return node.map(toText).join('')
+    if (isValidElement<{ children?: ReactNode }>(node))
+        return toText(node.props.children)
+    return ''
+}
 
 const components: Components = {
     // Links open safely in a new tab
@@ -14,30 +26,30 @@ const components: Components = {
             {children}
         </a>
     ),
-    // Fenced blocks scroll instead of stretching the layout
-    pre: ({ children }) => (
-        <pre className="overflow-x-auto rounded-lg border border-zinc-200 bg-white p-3 text-xs">
-            {children}
-        </pre>
-    ),
-    code: ({ className, children, ...props }) => {
-        const isBlock = typeof className === 'string' && className.includes('language-')
-        if (isBlock) {
-            return (
-                <code className={`${className} bg-transparent p-0 text-xs`} {...props}>
-                    {children}
-                </code>
-            )
-        }
+    // Fenced blocks render as a dark card with a language header and copy button
+    pre: ({ children }) => {
+        const code = Children.toArray(children).find((child) =>
+            isValidElement<{ className?: string; children?: ReactNode }>(child),
+        ) as React.ReactElement<{ className?: string; children?: ReactNode }> | undefined
+
+        const language = /language-([\w+#-]+)/.exec(code?.props.className ?? '')?.[1]
+
         return (
-            <code
-                className="rounded bg-zinc-200/70 px-1 py-0.5 text-[0.85em] font-medium text-zinc-800 before:content-none after:content-none"
-                {...props}
-            >
-                {children}
-            </code>
+            <CodeBlock
+                language={language}
+                code={toText(code?.props.children ?? children).replace(/\n$/, '')}
+            />
         )
     },
+    // Only inline code reaches here — fenced blocks are handled by `pre` above
+    code: ({ children, ...props }) => (
+        <code
+            className="rounded-md border border-zinc-200 bg-white px-1.5 py-0.5 font-mono text-[0.85em] font-medium text-zinc-800 before:content-none after:content-none"
+            {...props}
+        >
+            {children}
+        </code>
+    ),
     // GFM tables need their own scroll container on narrow screens
     table: ({ children }) => (
         <div className="overflow-x-auto">
