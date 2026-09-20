@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import OnlineCount from "./_components/OnlineCount";
+import HealthCheck from "./_components/HealthCheck";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -48,11 +49,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               </div>
             </div>
           </header>
-
-          {children}
+          {/* Gates the page until the API answers /health */}
+          <HealthCheck>{children}</HealthCheck>
 
           <footer className="border-t border-zinc-200 py-5 text-center text-xs text-zinc-400">
-            Engineered by Pradipta
+            Engineered by Pradipta S Bhuin
           </footer>
         </div>
       </body>

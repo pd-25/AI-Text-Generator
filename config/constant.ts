@@ -99,3 +99,12 @@ export const processingWords = [
   "Learning",
   "Predicting"
 ];
+
+// Shown while the backend health check is still failing. The free API instance
+// sleeps between visits, so a cold start can keep the page waiting a while.
+export const healthCheckMessages = [
+  "Connecting to server",
+  "Initializing the container",
+  "Just a few seconds",
+  "Thanks for your patience",
+];

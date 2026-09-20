@@ -12,6 +12,7 @@ export default function Home() {
           Compose an email or draft a blog post.
         </p>
       </div>
+      
 
       <PromtBar />
 
