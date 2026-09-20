@@ -57,9 +57,9 @@ export default function HealthCheck({ children }: { children: ReactNode }) {
       }
     };
 
-    setTimeout(()=> {
+    // setTimeout(()=> {
         probe();
-    }, 15000)
+    // }, 15000)
 
     return () => {
       cancelled = true;
